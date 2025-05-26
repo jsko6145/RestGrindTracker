@@ -1,0 +1,8 @@
+## Interface: 11400
+## Title: RestGrindTracker
+## Notes: Tracks XP and kill stats from mob grinding
+## Author: YourName
+## Version: 1.0
+## SavedVariables: RestGrindData
+
+RestGrindTracker.lua
