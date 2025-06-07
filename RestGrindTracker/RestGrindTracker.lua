@@ -104,6 +104,16 @@ display:SetBackdropColor(0, 0, 0, 0.5)
 display.text = display:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 display.text:SetPoint("CENTER")
 
+-- Helper to format large numbers with commas
+local function BreakUpLargeNumbers(num)
+    local formatted = tostring(num)
+    while true do  
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return formatted
+end
+
 -- Update text
 local function UpdateDisplay()
     local currentXP = UnitXP("player")
