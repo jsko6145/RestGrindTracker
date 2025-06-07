@@ -1,0 +1,1 @@
+[System.Environment]::SetEnvironmentVariable("RESTGRIND_SOURCE", "C:\Users\Jeff\path 2 source\ RestGrindTracker\RestGrindTracker", "Machine")
