@@ -71,12 +71,19 @@ display:SetScript("OnDragStop", function(self)
 end)
 
 -- Add resize handle
-local resizeButton = CreateFrame("Button", nil, display)
+local resizeButton = CreateFrame("Button", nil, display, "BackdropTemplate")
 resizeButton:SetSize(16, 16)
-resizeButton:SetPoint("BOTTOMRIGHT")
+resizeButton:SetPoint("BOTTOMRIGHT", display, "BOTTOMRIGHT", -2, 2) -- Offset inside the border
+resizeButton:SetFrameLevel(display:GetFrameLevel() + 10) -- Ensure it's on top
+
 resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
 resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
 resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+
+-- Add a semi-transparent white background for visibility
+resizeButton:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background" })
+resizeButton:SetBackdropColor(1, 1, 1, 0.3)
+
 resizeButton:SetScript("OnMouseDown", function(self, button)
     if button == "LeftButton" then
         display:StartSizing("BOTTOMRIGHT")
