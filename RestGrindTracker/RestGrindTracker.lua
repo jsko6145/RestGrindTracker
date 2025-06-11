@@ -54,13 +54,10 @@ local function GetXPToNextLevel()
     return UnitXPMax("player") - UnitXP("player")
 end
 
--- Create movable and resizable UI frame
+-- Create movable UI frame
 local display = CreateFrame("Frame", "RestGrindTrackerFrame", UIParent, "BackdropTemplate")
 display:SetSize(360, 140)
-display:SetMinResize(200, 80) -- Minimum size
-display:SetMaxResize(800, 400) -- Optional: Maximum size
 display:SetMovable(true)
-display:SetResizable(true) -- Enable resizing
 display:EnableMouse(true)
 display:RegisterForDrag("LeftButton")
 display:SetScript("OnDragStart", display.StartMoving)
@@ -68,29 +65,6 @@ display:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
     local point, _, _, x, y = self:GetPoint()
     RestGrindData.framePos = { point = point, x = x, y = y }
-end)
-
--- Add resize handle
-local resizeButton = CreateFrame("Button", nil, display, "BackdropTemplate")
-resizeButton:SetSize(16, 16)
-resizeButton:SetPoint("BOTTOMRIGHT", display, "BOTTOMRIGHT", -2, 2) -- Offset inside the border
-resizeButton:SetFrameLevel(display:GetFrameLevel() + 10) -- Ensure it's on top
-
-resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-
--- Add a semi-transparent white background for visibility
-resizeButton:SetBackdrop({ bgFile = "Interface/Tooltips/UI-Tooltip-Background" })
-resizeButton:SetBackdropColor(1, 1, 1, 0.3)
-
-resizeButton:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" then
-        display:StartSizing("BOTTOMRIGHT")
-    end
-end)
-resizeButton:SetScript("OnMouseUp", function(self, button)
-    display:StopMovingOrSizing()
 end)
 
 -- Set backdrop
@@ -103,16 +77,6 @@ display:SetBackdropColor(0, 0, 0, 0.5)
 -- Text
 display.text = display:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 display.text:SetPoint("CENTER")
-
--- Helper to format large numbers with commas
-local function BreakUpLargeNumbers(num)
-    local formatted = tostring(num)
-    while true do  
-        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
-        if k == 0 then break end
-    end
-    return formatted
-end
 
 -- Update text
 local function UpdateDisplay()
