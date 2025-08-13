@@ -1,3 +1,5 @@
+-- Addon version tracking
+local AddonVersion = "1.0.0"
 -- Main addon frame
 local addonFrame = CreateFrame("Frame")
 local sessionStartTime = 0
