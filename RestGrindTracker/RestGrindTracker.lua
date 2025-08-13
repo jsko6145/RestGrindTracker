@@ -83,8 +83,6 @@ local function UpdateDisplay()
     local currentXP = UnitXP("player")
     local maxXP = UnitXPMax("player")
     local restedXP = GetXPExhaustion() or 0
-    local projectedXP = restedXP * 2
-    local projectedLevels = maxXP > 0 and projectedXP / maxXP or 0
 
     local sessionPlaytime = (GetTime() - sessionStartTime) / 3600
     local totalPlaytime = RestGrindData.totalPlaytime + sessionPlaytime
@@ -99,9 +97,8 @@ local function UpdateDisplay()
     local estHoursToNext = xpPerHour > 0 and (xpToNext / xpPerHour) or 0
 
     display.text:SetText(string.format(
-        "Rested XP: %s\nProjected: %.0f XP (%.2f levels)\nTotal Kills: %d\nTotal XP: %s\nXP/hour: %.0f\nTime Played: %s\nTo Level 60: %s\nTo Next Level: %s",
+        "Rested XP: %s\nTotal Kills: %d\nTotal XP: %s\nXP/hour: %.0f\nTime Played: %s\nTo Level 60: %s\nTo Next Level: %s",
         BreakUpLargeNumbers(restedXP),
-        projectedXP, projectedLevels,
         totalKills,
         BreakUpLargeNumbers(totalXP),
         xpPerHour,
