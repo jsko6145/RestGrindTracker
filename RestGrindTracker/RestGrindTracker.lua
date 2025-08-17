@@ -17,9 +17,17 @@ local XPToLevel60 = {
 local MAX_LEVEL = 60
 
 -- Initialize saved data
+local function GetCharKey()
+    local name = UnitName("player") or "Unknown"
+    local realm = GetRealmName() or "UnknownRealm"
+    return realm .. "-" .. name
+end
+
 local function InitSavedData()
-    if not RestGrindData then
-        RestGrindData = {
+    if not RestGrindData then RestGrindData = {} end
+    local charKey = GetCharKey()
+    if not RestGrindData[charKey] then
+        RestGrindData[charKey] = {
             totalXP = 0,
             totalKills = 0,
             totalPlaytime = 0,
@@ -82,14 +90,18 @@ display.text:SetPoint("CENTER")
 
 -- Update text
 local function UpdateDisplay()
+    local charKey = GetCharKey()
+    local charData = RestGrindData[charKey]
+    if not charData then return end
+
     local currentXP = UnitXP("player")
     local maxXP = UnitXPMax("player")
     local restedXP = GetXPExhaustion() or 0
 
     local sessionPlaytime = (GetTime() - sessionStartTime) / 3600
-    local totalPlaytime = RestGrindData.totalPlaytime + sessionPlaytime
-    local totalXP = RestGrindData.totalXP
-    local totalKills = RestGrindData.totalKills
+    local totalPlaytime = charData.totalPlaytime + sessionPlaytime
+    local totalXP = charData.totalXP
+    local totalKills = charData.totalKills
     local xpPerHour = totalPlaytime > 0 and (totalXP / totalPlaytime) or 0
 
     local xpTo60 = GetRemainingXPTo60()
@@ -118,6 +130,7 @@ addonFrame:RegisterEvent("PLAYER_LOGOUT")
 addonFrame:RegisterEvent("PLAYER_XP_UPDATE")
 
 addonFrame:SetScript("OnEvent", function(self, event, arg1)
+    local charKey = GetCharKey()
     if event == "ADDON_LOADED" and arg1 == "RestGrindTracker" then
         InitSavedData()
 
@@ -125,7 +138,8 @@ addonFrame:SetScript("OnEvent", function(self, event, arg1)
         sessionStartTime = GetTime()
         lastXP = UnitXP("player")
 
-        local pos = RestGrindData.framePos
+        local charData = RestGrindData[charKey]
+        local pos = charData and charData.framePos or nil
         if pos and pos.point then
             display:ClearAllPoints()
             display:SetPoint(pos.point, UIParent, pos.point, pos.x, pos.y)
@@ -136,22 +150,28 @@ addonFrame:SetScript("OnEvent", function(self, event, arg1)
         UpdateDisplay()
 
     elseif event == "PLAYER_LOGOUT" then
-        local sessionDuration = (GetTime() - sessionStartTime) / 3600
-        RestGrindData.totalPlaytime = RestGrindData.totalPlaytime + sessionDuration
+        local charData = RestGrindData[charKey]
+        if charData then
+            local sessionDuration = (GetTime() - sessionStartTime) / 3600
+            charData.totalPlaytime = charData.totalPlaytime + sessionDuration
+        end
 
     elseif event == "PLAYER_XP_UPDATE" then
-        local newXP = UnitXP("player")
-        local gained = newXP - lastXP
-        if gained < 0 then
-            gained = (UnitXPMax("player") - lastXP) + newXP
-        end
+        local charData = RestGrindData[charKey]
+        if charData then
+            local newXP = UnitXP("player")
+            local gained = newXP - lastXP
+            if gained < 0 then
+                gained = (UnitXPMax("player") - lastXP) + newXP
+            end
 
-        if gained > 0 then
-            RestGrindData.totalXP = RestGrindData.totalXP + gained
-            RestGrindData.totalKills = RestGrindData.totalKills + 1
-        end
+            if gained > 0 then
+                charData.totalXP = charData.totalXP + gained
+                charData.totalKills = charData.totalKills + 1
+            end
 
-        lastXP = newXP
-        UpdateDisplay()
+            lastXP = newXP
+            UpdateDisplay()
+        end
     end
 end)
