@@ -74,7 +74,10 @@ display:SetScript("OnDragStart", display.StartMoving)
 display:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
     local point, _, _, x, y = self:GetPoint()
-    RestGrindData.framePos = { point = point, x = x, y = y }
+    local charKey = GetCharKey()
+    if RestGrindData and RestGrindData[charKey] then
+        RestGrindData[charKey].framePos = { point = point, x = x, y = y }
+    end
 end)
 
 -- Set backdrop
