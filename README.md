@@ -8,7 +8,8 @@ RestGrindTracker is a World of Warcraft Classic addon that tracks XP and kill st
 - Displays rested XP and projected XP gain
 - Shows XP/hour and total playtime
 - Estimates time to next level and to level 60
-- Movable UI frame with persistent position
+- Movable and resizable UI frame with persistent position
+- Stats are tracked per character (not account-wide)
 - Data saved between sessions
 
 ## Installation
@@ -51,7 +52,7 @@ A PowerShell script, [`deploy.ps1`](deploy.ps1), is provided to automate deploym
 
 ## License
 
-MIT License (or specify your license here)
+MIT License
 
 ---
 
