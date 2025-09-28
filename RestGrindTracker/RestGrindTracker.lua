@@ -4,6 +4,34 @@ local AddonVersion = "1.0.0"
 local addonFrame = CreateFrame("Frame")
 local sessionStartTime = 0
 local lastXP = 0
+local timePlayedSeconds = nil -- populated via TIME_PLAYED_MSG
+local timePlayedRequestPending = false
+local timePlayedRequestAttempts = 0
+local MAX_TIME_PLAYED_ATTEMPTS = 5
+
+-- Exponential-ish backoff schedule in seconds
+local timePlayedRetryDelays = {2, 5, 10, 20, 30}
+
+local function RequestTimePlayedWithRetry()
+    if timePlayedSeconds then return end -- already have data
+    if timePlayedRequestPending then return end -- request already in flight
+    if timePlayedRequestAttempts >= MAX_TIME_PLAYED_ATTEMPTS then return end -- give up
+
+    timePlayedRequestPending = true
+    timePlayedRequestAttempts = timePlayedRequestAttempts + 1
+    RequestTimePlayed()
+
+    -- Schedule a retry if still not populated after delay
+    local attempt = timePlayedRequestAttempts
+    local delay = timePlayedRetryDelays[attempt] or 30
+    C_Timer.After(delay, function()
+        if not timePlayedSeconds and timePlayedRequestAttempts == attempt then
+            -- no response arrived (TIME_PLAYED_MSG would set timePlayedSeconds)
+            timePlayedRequestPending = false
+            RequestTimePlayedWithRetry()
+        end
+    end)
+end
 
 -- Classic XP required per level (1–60)
 local XPToLevel60 = {
@@ -30,7 +58,7 @@ local function InitSavedData()
         RestGrindData[charKey] = {
             totalXP = 0,
             totalKills = 0,
-            totalPlaytime = 0,
+            -- totalPlaytime field removed; now relying on Blizzard /played API (TIME_PLAYED_MSG)
             framePos = { point = "CENTER", x = 0, y = 0 }
         }
     end
@@ -102,7 +130,13 @@ local function UpdateDisplay()
     local restedXP = GetXPExhaustion() or 0
 
     local sessionPlaytime = (GetTime() - sessionStartTime) / 3600
-    local totalPlaytime = charData.totalPlaytime + sessionPlaytime
+    local totalPlaytime
+    if timePlayedSeconds then
+        totalPlaytime = timePlayedSeconds / 3600
+    else
+        -- Fallback before TIME_PLAYED_MSG arrives: show session time only
+        totalPlaytime = sessionPlaytime
+    end
     local totalXP = charData.totalXP
     local totalKills = charData.totalKills
     local xpPerHour = totalPlaytime > 0 and (totalXP / totalPlaytime) or 0
@@ -131,6 +165,7 @@ addonFrame:RegisterEvent("PLAYER_LOGIN")
 addonFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 addonFrame:RegisterEvent("PLAYER_LOGOUT")
 addonFrame:RegisterEvent("PLAYER_XP_UPDATE")
+addonFrame:RegisterEvent("TIME_PLAYED_MSG")
 
 addonFrame:SetScript("OnEvent", function(self, event, arg1)
     local charKey = GetCharKey()
@@ -140,6 +175,9 @@ addonFrame:SetScript("OnEvent", function(self, event, arg1)
     elseif event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
         sessionStartTime = GetTime()
         lastXP = UnitXP("player")
+
+    -- Ask server for /played data (with retry in case of throttle)
+    RequestTimePlayedWithRetry()
 
         local charData = RestGrindData[charKey]
         local pos = charData and charData.framePos or nil
@@ -153,11 +191,7 @@ addonFrame:SetScript("OnEvent", function(self, event, arg1)
         UpdateDisplay()
 
     elseif event == "PLAYER_LOGOUT" then
-        local charData = RestGrindData[charKey]
-        if charData then
-            local sessionDuration = (GetTime() - sessionStartTime) / 3600
-            charData.totalPlaytime = charData.totalPlaytime + sessionDuration
-        end
+        -- No manual accumulation needed; relying on Blizzard's /played tracking
 
     elseif event == "PLAYER_XP_UPDATE" then
         local charData = RestGrindData[charKey]
@@ -176,5 +210,10 @@ addonFrame:SetScript("OnEvent", function(self, event, arg1)
             lastXP = newXP
             UpdateDisplay()
         end
+    elseif event == "TIME_PLAYED_MSG" then
+        -- event args: totalTimePlayed, levelTimePlayed
+        timePlayedSeconds = arg1 -- total time played in seconds
+        timePlayedRequestPending = false
+        UpdateDisplay()
     end
 end)

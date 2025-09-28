@@ -12,6 +12,12 @@ RestGrindTracker is a World of Warcraft Classic addon that tracks XP and kill st
 - Stats are tracked per character (not account-wide)
 - Data saved between sessions
 
+## Time Played Source
+
+The addon now uses Blizzard's authoritative /played time (via `RequestTimePlayed()` and the `TIME_PLAYED_MSG` event) instead of tracking its own accumulated playtime. Until the server responds (usually a brief moment after login / reload), the XP/hour value is calculated using only the current session time. Once the event fires, the display updates automatically to reflect total character playtime.
+
+If you previously used an earlier version, any `totalPlaytime` value in saved variables is ignored going forward and can be safely removed later.
+
 ## Installation
 
 1. Copy the contents of the `RestGrindTracker` folder to your WoW AddOns directory:
